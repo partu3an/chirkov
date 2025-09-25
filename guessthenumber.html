@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Угадай число - Игра</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .difficulty-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: #f0f0f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .difficulty-btn:hover:not(.active) {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        .game-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+        }
+
+        .attempts {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .range {
+            font-size: 1.1rem;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        .number-input {
+            width: 200px;
+            padding: 15px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .number-input:focus {
+            border-color: #667eea;
+        }
+
+        .guess-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        .guess-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .guess-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            min-height: 60px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .result.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .result.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .result.hint {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .history {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .history h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .history-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .restart-btn {
+            padding: 12px 25px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            margin-top: 15px;
+        }
+
+        .restart-btn:hover {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .difficulty-buttons {
+                flex-direction: column;
+            }
+            
+            .number-input {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 Угадай число</h1>
+        
+        <div class="difficulty-buttons">
+            <button class="difficulty-btn active" data-difficulty="easy">Легко (1-50)</button>
+            <button class="difficulty-btn" data-difficulty="medium">Средне (1-100)</button>
+            <button class="difficulty-btn" data-difficulty="hard">Сложно (1-200)</button>
+        </div>
+
+        <div class="game-info">
+            <div class="attempts">Попытки: <span id="attempts-count">0</span></div>
+            <div class="range">Диапазон: <span id="range">1-50</span></div>
+        </div>
+
+        <div class="input-section">
+            <input type="number" class="number-input" id="guess-input" min="1" max="50" placeholder="Введите число">
+            <button class="guess-btn" id="guess-btn">Проверить</button>
+        </div>
+
+        <div class="result" id="result">
+            Введите число и нажмите "Проверить"
+        </div>
+
+        <div class="history">
+            <h3>История попыток:</h3>
+            <div class="history-list" id="history-list"></div>
+        </div>
+
+        <button class="restart-btn" id="restart-btn" style="display: none;">Новая игра</button>
+    </div>
+
+    <script>
+        // Элементы DOM
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const guessInput = document.getElementById('guess-input');
+        const guessBtn = document.getElementById('guess-btn');
+        const resultDiv = document.getElementById('result');
+        const attemptsCount = document.getElementById('attempts-count');
+        const rangeSpan = document.getElementById('range');
+        const historyList = document.getElementById('history-list');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Переменные игры
+        let targetNumber;
+        let attempts = 0;
+        let maxNumber = 50;
+        let gameActive = true;
+
+        // Инициализация игры
+        function initGame() {
+            targetNumber = Math.floor(Math.random() * maxNumber) + 1;
+            attempts = 0;
+            gameActive = true;
+            attemptsCount.textContent = attempts;
+            guessInput.value = '';
+            resultDiv.textContent = 'Введите число и нажмите "Проверить"';
+            resultDiv.className = 'result';
+            historyList.innerHTML = '';
+            restartBtn.style.display = 'none';
+            guessBtn.disabled = false;
+            guessInput.disabled = false;
+            
+            // Установка границ для input
+            guessInput.min = 1;
+            guessInput.max = maxNumber;
+            guessInput.placeholder = `Введите число от 1 до ${maxNumber}`;
+            
+            console.log('Загаданное число:', targetNumber); // Для отладки
+        }
+
+        // Установка сложности
+        function setDifficulty(difficulty) {
+            difficultyButtons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            switch(difficulty) {
+                case 'easy':
+                    maxNumber = 50;
+                    rangeSpan.textContent = '1-50';
+                    break;
+                case 'medium':
+                    maxNumber = 100;
+                    rangeSpan.textContent = '1-100';
+                    break;
+                case 'hard':
+                    maxNumber = 200;
+                    rangeSpan.textContent = '1-200';
+                    break;
+            }
+
+            initGame();
+        }
+
+        // Проверка числа
+        function checkGuess() {
+            if (!gameActive) return;
+
+            const userGuess = parseInt(guessInput.value);
+            
+            // Проверка валидности ввода
+            if (isNaN(userGuess) || userGuess < 1 || userGuess > maxNumber) {
+                resultDiv.textContent = `Пожалуйста, введите число от 1 до ${maxNumber}`;
+                resultDiv.className = 'result incorrect';
+                return;
+            }
+
+            attempts++;
+            attemptsCount.textContent = attempts;
+
+            // Добавление в историю
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            let resultText = '';
+            if (userGuess === targetNumber) {
+                resultText = `🎉 Поздравляем! Вы угадали число ${targetNumber} за ${attempts} попыток!`;
+                resultDiv.className = 'result correct';
+                gameActive = false;
+                guessBtn.disabled = true;
+                guessInput.disabled = true;
+                restartBtn.style.display = 'block';
+                historyItem.innerHTML = `✅ <strong>${userGuess}</strong> - Верно!`;
+            } else if (userGuess < targetNumber) {
+                resultText = '📈 Загаданное число больше';
+                resultDiv.className = 'result hint';
+                historyItem.innerHTML = `📈 <strong>${userGuess}</strong> - Мало`;
+            } else {
+                resultText = '📉 Загаданное число меньше';
+                resultDiv.className = 'result hint';
+                historyItem.innerHTML = `📉 <strong>${userGuess}</strong> - Много`;
+            }
+
+            resultDiv.textContent = resultText;
+            historyList.prepend(historyItem);
+
+            // Очистка input
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        // Обработчики событий
+        difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                setDifficulty(e.target.dataset.difficulty);
+            });
+        });
+
+        guessBtn.addEventListener('click', checkGuess);
+
+        guessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkGuess();
+            }
+        });
+
+        restartBtn.addEventListener('click', initGame);
+
+        // Запуск игры при загрузке
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
